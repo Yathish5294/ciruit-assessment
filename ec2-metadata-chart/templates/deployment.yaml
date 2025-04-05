@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: ec2-metadata-script
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ec2-metadata-script
+  template:
+    metadata:
+      labels:
+        app: ec2-metadata-script
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet  # Important for DNS to still work
+      containers:
+        - name: ec2-script
+          image: yathishs/ec2-meta:v2
+          command: {{ .Values.pod.command | toJson }}
+          args: {{ .Values.pod.args | toJson }}
+          ports:
+            - containerPort: 4566  # Port for LocalStack API
+            - containerPort: 80    # Your application port
+          env:
+            - name: "LOCALSTACK_HOST"
+              value: "localhost"
+            - name: "AWS_ACCESS_KEY_ID"
+              value: "test"
+            - name: "AWS_SECRET_ACCESS_KEY"
+              value: "test"
+            - name: "AWS_DEFAULT_REGION"
+              value: "us-east-1"
+        - name: localstack
+          image: "{{ .Values.localstack.image }}"
+          ports:
+            - containerPort: 4567
+
